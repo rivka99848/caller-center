@@ -1,0 +1,182 @@
+// Prisma schema — מערכת ניהול מתקשרים למוקד
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  agent
+  admin
+}
+
+enum UserStatus {
+  pending
+  active
+  inactive
+}
+
+enum ExtensionStatus {
+  pending
+  active
+}
+
+enum FieldType {
+  text
+  phone
+  number
+  date
+  select
+}
+
+enum PhoneLabel {
+  husband
+  wife
+  home
+  other
+}
+
+model User {
+  id           String     @id @default(uuid())
+  username     String     @unique
+  passwordHash String
+  fullName     String
+  internalId   String?
+  role         Role       @default(agent)
+  status       UserStatus @default(pending)
+  approvedAt   DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  extensions Extension[]
+  notes      Note[]
+  calls      Call[]
+  audits     AuditLog[]
+
+  @@map("users")
+}
+
+model Extension {
+  id              String          @id @default(uuid())
+  extensionNumber String          @unique
+  agent           User?           @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  agentId         String?
+  status          ExtensionStatus @default(pending)
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([agentId])
+  @@map("extensions")
+}
+
+model FieldDefinition {
+  id           String    @id @default(uuid())
+  fieldKey     String    @unique
+  label        String
+  type         FieldType @default(text)
+  displayOrder Int       @default(0)
+  isCore       Boolean   @default(false)
+  visible      Boolean   @default(true)
+  options      Json? // for select type
+  createdAt    DateTime  @default(now())
+
+  @@map("field_definitions")
+}
+
+model Caller {
+  id           String   @id @default(uuid())
+  callerNumber String? // מספר / מזהה לקוח
+  title        String? // תואר
+  firstName    String? // שם פרטי
+  lastName     String? // שם משפחה
+  suffix       String? // סיומת
+  address      String?
+  city         String?
+  shtiebel     String? // שטיבל
+  customFields Json     @default("{}")
+  notes        String? // free-text quick notes on the record
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  phones    CallerPhone[]
+  noteItems Note[]
+  calls     Call[]
+
+  @@index([lastName])
+  @@index([firstName])
+  @@index([callerNumber])
+  @@map("callers")
+}
+
+model CallerPhone {
+  id             String     @id @default(uuid())
+  caller         Caller     @relation(fields: [callerId], references: [id], onDelete: Cascade)
+  callerId       String
+  phoneNormalized String    @unique
+  phoneRaw       String
+  label          PhoneLabel @default(other)
+  isPrimary      Boolean    @default(false)
+
+  @@index([callerId])
+  @@map("caller_phones")
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  caller    Caller   @relation(fields: [callerId], references: [id], onDelete: Cascade)
+  callerId  String
+  agent     User?    @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  agentId   String?
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([callerId])
+  @@map("notes")
+}
+
+model Call {
+  id            String    @id @default(uuid())
+  callId        String? // מזהה שיחה מהתותח
+  phoneNumber   String?
+  extension     String?
+  agent         User?     @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  agentId       String?
+  caller        Caller?   @relation(fields: [callerId], references: [id], onDelete: SetNull)
+  callerId      String?
+  eventType     String?
+  eventTime     DateTime?
+  startTime     DateTime?
+  answerTime    DateTime?
+  endTime       DateTime?
+  durationSec   Int?
+  matched       Boolean   @default(false)
+  screenPopSent Boolean   @default(false)
+  screenPopAck  Boolean   @default(false)
+  error         String?
+  rawPayload    Json?
+  createdAt     DateTime  @default(now())
+
+  @@index([agentId])
+  @@index([callerId])
+  @@index([extension])
+  @@index([createdAt])
+  @@map("calls")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  entityType String // caller | user | extension
+  entityId   String
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorId    String?
+  action     String
+  changes    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("audit_log")
+}
