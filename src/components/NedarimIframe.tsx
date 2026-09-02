@@ -14,6 +14,7 @@ const API_VALID = process.env.NEXT_PUBLIC_NEDARIM_API || "";
 
 type PayerInfo = {
   callerId: string;
+  callerNumber: string | null;
   firstName: string | null;
   lastName: string | null;
   city: string | null;
@@ -95,9 +96,10 @@ export function NedarimIframe({ payer }: { payer: PayerInfo }) {
       City: payer.city || "",
       Phone: payer.phone || "",
       Mail: "",
-      Comment: "תרומה דרך מערכת המוקד",
+      Comment: `תרומה דרך מערכת המוקד${payer.callerNumber ? " · לקוח #" + payer.callerNumber : ""}`,
       Groupe: "",
       Param1: payer.callerId,
+      Param2: payer.callerNumber || "",
     });
   }
 

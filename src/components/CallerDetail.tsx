@@ -61,6 +61,7 @@ export function CallerDetail({
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [tab, setTab] = useState<"details" | "notes" | "history" | "pay">("details");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
 
@@ -157,6 +158,29 @@ export function CallerDetail({
         </button>
       </div>
 
+      {/* כרטיסיות — ניווט מהיר בלי גלילה */}
+      <div className="sticky top-16 z-10 flex flex-wrap gap-1 rounded-xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
+        {[
+          { key: "details", label: "פרטים" },
+          { key: "notes", label: "📝 הערות" },
+          { key: "history", label: "היסטוריה" },
+          { key: "pay", label: "💳 תשלומים" },
+        ].map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key as any)}
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${
+              tab === t.key ? "bg-brand-600 text-white shadow" : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ===== פרטים ===== */}
+      {tab === "details" && (
+      <div className="space-y-4">
       {/* פרטי מתקשר */}
       <div className="card">
         <div className="mb-3 flex items-center justify-between">
@@ -258,8 +282,13 @@ export function CallerDetail({
           <button className="btn-secondary" onClick={addPhone}>הוסף מספר</button>
         </div>
       </div>
+      </div>
+      )}
 
-      {/* הערות (תיעוד) — הפעולה המרכזית בזמן שיחה, לכן ראשונה ומודגשת */}
+      {/* ===== הערות ===== */}
+      {tab === "notes" && (
+      <div className="space-y-4">
+      {/* הערות (תיעוד) — הפעולה המרכזית בזמן שיחה */}
       <div className="card ring-2 ring-brand-200">
         <h2 className="section-title">📝 הערות ותיעוד שיחה</h2>
         <div className="mb-3 flex gap-2">
@@ -284,7 +313,12 @@ export function CallerDetail({
           {caller.noteItems.length === 0 && <li className="text-sm text-slate-400">אין הערות עדיין.</li>}
         </ul>
       </div>
+      </div>
+      )}
 
+      {/* ===== היסטוריה ===== */}
+      {tab === "history" && (
+      <div className="space-y-4">
       {/* היסטוריית שיחות */}
       <div className="card">
         <h2 className="section-title">היסטוריית שיחות</h2>
@@ -321,11 +355,15 @@ export function CallerDetail({
           </ul>
         )}
       </div>
+      </div>
+      )}
 
-      {/* תשלומים — נדרים פלוס */}
+      {/* ===== תשלומים ===== */}
+      {tab === "pay" && (
       <NedarimIframe
         payer={{
           callerId: caller.id,
+          callerNumber: caller.callerNumber,
           firstName: caller.firstName,
           lastName: caller.lastName,
           city: caller.city,
@@ -333,6 +371,7 @@ export function CallerDetail({
           phone: primaryPhone?.phoneRaw || null,
         }}
       />
+      )}
     </div>
   );
 }
