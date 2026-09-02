@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { NedarimIframe } from "./NedarimIframe";
 
 const PHONE_LABELS: Record<string, string> = {
   husband: "נייד בעל",
@@ -321,10 +322,17 @@ export function CallerDetail({
         )}
       </div>
 
-      {/* אזור עתידי לתשלומים (Iframe) — placeholder */}
-      <div className="card border-2 border-dashed border-slate-200 bg-slate-50 text-center text-sm text-slate-400">
-        אזור תשלומים / נדרים (יתווסף בהמשך כ־Iframe)
-      </div>
+      {/* תשלומים — נדרים פלוס */}
+      <NedarimIframe
+        payer={{
+          callerId: caller.id,
+          firstName: caller.firstName,
+          lastName: caller.lastName,
+          city: caller.city,
+          address: caller.address,
+          phone: primaryPhone?.phoneRaw || null,
+        }}
+      />
     </div>
   );
 }
